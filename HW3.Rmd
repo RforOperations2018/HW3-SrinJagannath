@@ -1,0 +1,86 @@
+---
+title: "HW3"
+author: "Srinidhi Jagannath"
+date: "September 28, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(rgdal)
+require(leaflet)
+require(leaflet.extras)
+
+require(dplyr)
+require(readxl)
+require(stringr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Map with Point Awesome Markers
+
+```{r}
+#read data from csv file
+tree_data <- read.csv("./tree.csv") %>%
+  filter(condition != "Very Good" & condition != "Dead" & condition != "Poor" & condition != "N/A" & condition != "" &   condition != "Good") %>%
+  mutate(condition = as.character(condition),
+         condition = as.factor(condition))
+#verify filtered tree conditions
+levels(tree_data$condition)
+
+#select icons from fontAwesome
+icons <- awesomeIconList(
+  Excellent = makeAwesomeIcon(icon = "tree", library = "fa", markerColor = "green"),
+  Critical = makeAwesomeIcon(icon = "tree", library = "fa", markerColor = "red"),
+  Fair = makeAwesomeIcon(icon = "tree", library = "fa", markerColor = "yellow")
+  
+)
+
+#create map using leaflet
+leaflet(data = tree_data) %>%
+  addProviderTiles("OpenStreetMap.HOT") %>%
+  addAwesomeMarkers(lng = ~longitude, lat = ~latitude, icon = ~icons[condition], popup = ~common_name, clusterOptions   = markerClusterOptions() %>%
+  addLegend("bottomright", 
+  colors = c("#6dc066",  "#fef65b", "#ff3333"),
+  labels= c("Excellent", "Fair","Critical"),
+  title = "Tree COnditions")
+)
+
+```
+
+## Map with Polygon Marker
+```{r}
+#read shape file
+usa_map <- readOGR("./cb_2015_us_cd114_500k/cb_2015_us_cd114_500k.shp", layer = "cb_2015_us_cd114_500k", GDAL1_integer64_policy = TRUE)
+
+leaflet(usa_map) %>%
+  addPolygons() %>%
+  addTiles()
+
+
+```
+
+
+#map with layers
+```{r}
+  
+#use leaflet to plot map along eith layer control
+map_data <- leaflet() %>%
+  # Create Basemaps
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles("Stamen.Toner", group = "Toner") %>%
+  addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>%
+  setView(28.644800, 77.216721, zoom = 4) %>%
+  # Create Layer control
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+map_data
+```
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
